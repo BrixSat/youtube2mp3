@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script developed by Brix 
+# Script developed by Brix
 # Info? send me an email to info [ at ] cesararaujo [ dot ] net
 
 # You will require the folowing packages
@@ -12,10 +12,14 @@
 
 
 # Update the youtube dl
-sudo youtube-dl -U
+# On debian you can update youtube-dl using pip por youtube-dl it self
+#sudo youtube-dl -U
+#sudo pip install youtube-dl --upgrade
 
+for LINES in `cat $1`;do
 
-for LINE in `cat $1`;do
+	# Remove from the line the list $list=xpto&index=XX
+	LINE=$(echo $LINES | sed -e 's/[&|?]list=[a-zA-Z0-9]*//g' | sed -e 's/&index=[a-zA-Z0-9]*//g')
 
 	# Get the youtube page where the video is
 	RESULT="`wget -qO- ${LINE}`"
@@ -24,11 +28,17 @@ for LINE in `cat $1`;do
 	TEMP_NAME=$(echo ${RESULT} | sed -n 's/.*<title>\(.*\)<\/title>.*/\1/ip;T;q' | recode html..ascii)
 
 	# Replace - YouTube with nothing, its bad yo have it in the name
-	TEMP_NAME_NO_YOUTUBE=$(echo ${TEMP_NAME} | sed  's/ - YouTube//g')
-	
+	TEMP_NAME_NO_YOUTUBE=$(echo ${TEMP_NAME} | sed 's/ - YouTube//g')
+
 	# Replace / with - otherwise it will look for folder/filename
-	NAME=$(echo ${TEMP_NAME_NO_YOUTUBE} | sed  's/\//-/g') 
-	
+	NAME=$(echo ${TEMP_NAME_NO_YOUTUBE} | sed 's/\//-/g')
+
+	# If name is empty use a date or something
+	if [[ -z "$NAME" ]]
+	then
+		NAME=$(date)
+	fi
+
 	echo "###################################"
 	echo "## Downloading: ${LINE}"
 	echo "## Filename is: ${NAME} "
@@ -51,15 +61,15 @@ for LINE in `cat $1`;do
 	echo "###################################"
 	echo "Removing temporary file: ${X}"
 	echo "###################################"
-	
+
 	rm ${X}
-	
+
 	echo "###################################"
-	echo "##  Video converted succesfully! ##"
+	echo "## Video converted succesfully! ##"
 	echo "###################################"
 
 done
 
 echo "###################################"
-echo "##   All videos are converted!   ##"
+echo "## All videos are converted! ##"
 echo "###################################"
