@@ -1,11 +1,11 @@
 youtube2mp3 converter script
 ============================
 
-Youtube 2 Mp3 bash converter script.
+Youtube 2 Mp3 converter script.
 
 This scripts allows you to convert youtube files to mp3.
 
-To use it make it executable and pass a file with a youtube link per line.
+To use it make it executable and pass a file with a youtube link (playlists now included) per line.
 
 Example download.txt
 
@@ -31,4 +31,5 @@ If all goes well you will end up with 3 mp3 files :)
 * I used ubuntu and it works like a charm, so I guess you can use it in all
   linux distributions.
 * Please report dificulties or problems with the script.
+
 
