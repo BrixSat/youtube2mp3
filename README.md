@@ -27,3 +27,8 @@ If all goes well you will end up with 3 mp3 files :)
 * recode -> rename the filename in ascii format (remove the html entities)
 * ffmpeg -> convert the file to mp3, you may need special ffmpeg package
 
+###Operational systems
+* I used ubuntu and it works like a charm, so I guess you can use it in all
+  linux distributions.
+* Please report dificulties or problems with the script.
+
