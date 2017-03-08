@@ -1,0 +1,2 @@
+03/08/17: Forked project from BrixSat/youtube2mp3
+          Fixed compatibility issue with FFmpeg

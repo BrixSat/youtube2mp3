@@ -56,7 +56,7 @@ for LINES in `cat $1`;do
 	echo "## Video downloaded, converting. ##"
 	echo "###################################"
 
-	avconv -i ${X} -acodec libmp3lame -ac 2 -ab 128k -vn -y "${NAME}.mp3"
+	ffmpeg -i ${X} -acodec libmp3lame -ac 2 -ab 128k -vn -y "${NAME}.mp3"
 
 	echo "###################################"
 	echo "Removing temporary file: ${X}"
