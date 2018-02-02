@@ -11,10 +11,61 @@
 
 
 
-# Update the youtube dl
-# On debian you can update youtube-dl using pip por youtube-dl it self
-#sudo youtube-dl -U
-#sudo pip install youtube-dl --upgrade
+if [ -z $1 ]
+then
+	echo "Plase input a file with youtube links, one per line."
+	exit 2
+fi
+
+if ! [ -x "$(command -v sed)" ]; then
+  echo 'Error: sed is not installed.' >&2
+  exit 1
+fi
+
+if ! [ -x "$(command -v wget)" ]; then
+  echo 'Error: wget is not installed.' >&2
+  exit 1
+fi
+
+if ! [ -x "$(command -v youtube-dl)" ]; then
+  echo 'Error: youtube-dl is not installed.' >&2
+  echo 'Try to install: sudo pip install youtube-dl'
+  exit 1
+fi
+
+if ! [ -x "$(command -v ffmpeg)" ]; then
+  echo 'Error: ffmpeg is not installed.' >&2
+  exit 1
+fi
+
+if ! [ -x "$(command -v pip)" ]; then
+  echo 'Error: python pip is not installed.' >&2
+  exit 1
+fi
+
+if ! [ -x "$(command -v recode)" ]; then
+  echo 'Error: python recode is not installed.' >&2
+  exit 1
+fi
+
+echo "Checking youtube-dl version."
+#Checking package version
+# Find if youtube-dl is latest version
+VERSION=$(pip list --outdated 2>&1 | grep youtube-dl | sed 's/youtube-dl (//g' | sed 's/) - Latest://g' | sed 's/\[wheel\]//g')
+CURRENT=$(echo $VERSION | awk '{ print $1 }' )
+LATEST=$(echo $VERSION | awk '{ print $2 }' )
+
+if [ "${CURRENT}" != "$LATEST" ]
+then
+	# Update the youtube dl
+	#sudo youtube-dl -U
+	echo "Please input sudo password to upgrade youtube-dl."
+	sudo pip install youtube-dl --upgrade
+	echo "If upgrade went well please run the script again."
+	exit
+else
+	echo "Youtube-dl is up to date."
+fi
 
 for LINES in `cat $1`;do
 
@@ -36,7 +87,7 @@ for LINES in `cat $1`;do
 	# If name is empty use a date or something
 	if [[ -z "$NAME" ]]
 	then
-		NAME=$(date)
+		NAME=$(date | sed 's/ /_/g')
 	fi
 
 	echo "###################################"
@@ -50,12 +101,13 @@ for LINES in `cat $1`;do
 	echo "## Tempfile is: ${X}"
 	echo "###################################"
 
-	youtube-dl --output=${X} --format=18 "${LINE}"
+	youtube-dl -f bestvideo+bestaudio --output=${X} --format=18 "${LINE}"
 
 	echo "###################################"
 	echo "## Video downloaded, converting. ##"
 	echo "###################################"
 
+#	avconv -i ${X} -acodec libmp3lame -ac 2 -ab 128k -vn -y "${NAME}.mp3"
 	ffmpeg -i ${X} -acodec libmp3lame -ac 2 -ab 128k -vn -y "${NAME}.mp3"
 
 	echo "###################################"
