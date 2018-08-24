@@ -17,7 +17,10 @@ Example download.txt
 ###Using the script
 
     youtube2mp3.sh download.txt
-
+        
+###Using the script in debug mode
+    
+    youtube2mp3.sh download.txt debug
 
 If all goes well you will end up with 3 mp3 files :)
 
