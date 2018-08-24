@@ -17,6 +17,18 @@ then
 	exit 2
 fi
 
+if [ ! -z $2 ]
+then
+	if [[ "$2" == "debug" ]]
+	then
+		echo "###################################"
+		echo "##      Enabled debug mode!      ##"
+		echo "###################################"
+		DEBUG="DEBUG"
+	fi
+fi
+
+
 if ! [ -x "$(command -v sed)" ]; then
   echo 'Error: sed is not installed.' >&2
   exit 1
@@ -82,7 +94,7 @@ for LINES in `cat $1`;do
 	TEMP_NAME_NO_YOUTUBE=$(echo ${TEMP_NAME} | sed 's/ - YouTube//g')
 
 	# Replace / with - otherwise it will look for folder/filename
-	NAME=$(echo ${TEMP_NAME_NO_YOUTUBE} | sed 's/\//-/g')
+	NAME=$(echo ${TEMP_NAME_NO_YOUTUBE} | sed 's/\//-/g' )
 
 	# If name is empty use a date or something
 	if [[ -z "$NAME" ]]
@@ -95,33 +107,63 @@ for LINES in `cat $1`;do
 	echo "## Filename is: ${NAME} "
 	echo "###################################"
 
-	X=/tmp/.youtube-dl-$(date +%y.%m.%d_%H.%M.%S)-$RANDOM.flv
+	X=/tmp/.youtube-dl-$(date +%y.%m.%d_%H.%M.%S)-$RANDOM
 
-	echo "###################################"
-	echo "## Tempfile is: ${X}"
-	echo "###################################"
+	if [[ ! -z $DEBUG ]]
+	then
+		echo "###################################"
+		echo "## Tempfile is: ${X}"
+		echo "###################################"
+	fi
 
-	youtube-dl -f bestvideo+bestaudio --output=${X} --format=18 "${LINE}"
+	youtube-dl -f bestvideo+bestaudio --output=${X}.flv --format=18 "${LINE}"
 
 	echo "###################################"
 	echo "## Video downloaded, converting. ##"
 	echo "###################################"
 
 #	avconv -i ${X} -acodec libmp3lame -ac 2 -ab 128k -vn -y "${NAME}.mp3"
-	ffmpeg -i ${X} -acodec libmp3lame -ac 2 -ab 128k -vn -y "${NAME}.mp3"
+        if [[ ! -z $DEBUG ]]
+        then
+		ffmpeg -loglevel info -i ${X}.flv -acodec libmp3lame -ac 2 -ab 128k -vn -y "${X}.mp3"
+	else
+		ffmpeg -i ${X}.flv -acodec libmp3lame -ac 2 -ab 128k -vn -y "${X}.mp3" > /dev/null  2>&1
+	fi
 
-	echo "###################################"
-	echo "Removing temporary file: ${X}"
-	echo "###################################"
+	mv  "${X}.mp3" "$(pwd)/${NAME}.mp3"
+	RESULT=$?
 
-	rm ${X}
+	if [[ ! -z $DEBUG ]]
+	then
+		echo "###################################"
+		echo "Removing temporary file: ${X}"
+		echo "###################################"
+	fi
 
-	echo "###################################"
-	echo "## Video converted succesfully! ##"
-	echo "###################################"
+	rm ${X}.flv
+
+	if [[ $RESULT -eq 0 ]]
+	then
+		echo "###################################"
+		echo "## Video converted succesfully! ##"
+		echo "###################################"
+	else
+		FAILED=$(echo -e "$FAILED \n ${LINE}")
+		echo "###################################"
+		echo "## Video not converted           ##"
+		echo "###################################"
+	fi
 
 done
 
-echo "###################################"
-echo "## All videos are converted! ##"
-echo "###################################"
+if [[ -z $FAILED ]]
+then
+	echo "###################################"
+	echo "##   All videos are converted!   ##"
+	echo "###################################"
+else
+	echo "###################################"
+	echo "## Failed to convert:            ##"
+	echo "## $FAILED"
+	echo "###################################"
+fi
