@@ -60,24 +60,24 @@ if ! [ -x "$(command -v recode)" ]; then
   exit 1
 fi
 
+##Checking package version
+## Find if yt-dlp is latest version
 echo "Checking yt-dlp version."
-#Checking package version
-# Find if yt-dlp is latest version
-VERSION=$(pip list --outdated 2>&1 | grep yt-dlp | sed 's/yt-dlp (//g' | sed 's/) - Latest://g' | sed 's/\[wheel\]//g')
-CURRENT=$(echo $VERSION | awk '{ print $1 }' )
-LATEST=$(echo $VERSION | awk '{ print $2 }' )
-
-if [ "${CURRENT}" != "$LATEST" ]
-then
-	# Update the youtube dl
-	#sudo yt-dlp -U
-	echo "Please input sudo password to upgrade yt-dlp."
-	sudo pip install yt-dlp --upgrade
-	echo "If upgrade went well please run the script again."
-	exit
+installed_version=$(pip3 show yt-dlp | grep -i version | cut -d ' ' -f 2)
+latest_version=$(pip3 install yt-dlp==randomstring --break-system-packages 2>&1 | grep -i "from versions:" | cut -d '(' -f 2 | cut -d ')' -f 1 | tr ',' '\n' | tail -1 | tr -d ' ')
+echo "Installed version: $installed_version"
+echo "Latest version: $latest_version"
+if [ "$installed_version" = "$latest_version" ]; then
+  echo "The package yt-dlp is up-to-date."
 else
-	echo "yt-dlp is up to date."
+	echo "Updating outdated yt-dlp package"
+	pip3 install yt-dlp==${latest_version} --break-system-packages
+	echo "If upgrade went well please run the script again."
+	exit 1
 fi
+
+
+
 
 for LINES in `cat $1`;do
 
