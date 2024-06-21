@@ -4,7 +4,7 @@
 # Info? send me an email to info [ at ] cesararaujo [ dot ] net
 
 # You will require the folowing packages
-# youtube-dl -> download the flv or mp4 file from youtube-
+# yt-dlp -> download the flv or mp4 file from youtube-
 # ffmpeg -> convert to mp3 the downloaded file
 # ffmpeg restricted extras -> ability to save the file in mp3 format
 # recode -> convert the filename to ascii otherwise you will end with &nsbp; and other chars from html entities
@@ -39,9 +39,9 @@ if ! [ -x "$(command -v wget)" ]; then
   exit 1
 fi
 
-if ! [ -x "$(command -v youtube-dl)" ]; then
-  echo 'Error: youtube-dl is not installed.' >&2
-  echo 'Try to install: sudo pip install youtube-dl'
+if ! [ -x "$(command -v yt-dlp)" ]; then
+  echo 'Error: yt-dlp is not installed.' >&2
+  echo 'Try to install: sudo pip install yt-dlp'
   exit 1
 fi
 
@@ -60,23 +60,23 @@ if ! [ -x "$(command -v recode)" ]; then
   exit 1
 fi
 
-echo "Checking youtube-dl version."
+echo "Checking yt-dlp version."
 #Checking package version
-# Find if youtube-dl is latest version
-VERSION=$(pip list --outdated 2>&1 | grep youtube-dl | sed 's/youtube-dl (//g' | sed 's/) - Latest://g' | sed 's/\[wheel\]//g')
+# Find if yt-dlp is latest version
+VERSION=$(pip list --outdated 2>&1 | grep yt-dlp | sed 's/yt-dlp (//g' | sed 's/) - Latest://g' | sed 's/\[wheel\]//g')
 CURRENT=$(echo $VERSION | awk '{ print $1 }' )
 LATEST=$(echo $VERSION | awk '{ print $2 }' )
 
 if [ "${CURRENT}" != "$LATEST" ]
 then
 	# Update the youtube dl
-	#sudo youtube-dl -U
-	echo "Please input sudo password to upgrade youtube-dl."
-	sudo pip install youtube-dl --upgrade
+	#sudo yt-dlp -U
+	echo "Please input sudo password to upgrade yt-dlp."
+	sudo pip install yt-dlp --upgrade
 	echo "If upgrade went well please run the script again."
 	exit
 else
-	echo "Youtube-dl is up to date."
+	echo "yt-dlp is up to date."
 fi
 
 for LINES in `cat $1`;do
@@ -107,7 +107,7 @@ for LINES in `cat $1`;do
 	echo "## Filename is: ${NAME} "
 	echo "###################################"
 
-	X=/tmp/.youtube-dl-$(date +%y.%m.%d_%H.%M.%S)-$RANDOM
+	X=/tmp/.yt-dlp-$(date +%y.%m.%d_%H.%M.%S)-$RANDOM
 
 	if [[ ! -z $DEBUG ]]
 	then
@@ -116,7 +116,7 @@ for LINES in `cat $1`;do
 		echo "###################################"
 	fi
 
-	youtube-dl -f bestvideo+bestaudio --output=${X}.flv --format=18 "${LINE}"
+	yt-dlp -f bestvideo+bestaudio --output=${X}.flv --format=18 "${LINE}"
 
 	echo "###################################"
 	echo "## Video downloaded, converting. ##"
@@ -150,7 +150,7 @@ for LINES in `cat $1`;do
 	else
 		FAILED=$(echo -e "$FAILED \n ${LINE}")
 		echo "###################################"
-		echo "## Video not converted           ##"
+		echo "## Video not converted           ##"a
 		echo "###################################"
 	fi
 
