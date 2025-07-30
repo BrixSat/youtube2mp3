@@ -17,18 +17,6 @@ then
 	exit 2
 fi
 
-if [ ! -z $2 ]
-then
-	if [[ "$2" == "debug" ]]
-	then
-		echo "###################################"
-		echo "##      Enabled debug mode!      ##"
-		echo "###################################"
-		DEBUG="DEBUG"
-	fi
-fi
-
-
 if ! [ -x "$(command -v sed)" ]; then
   echo 'Error: sed is not installed.' >&2
   exit 1
@@ -56,28 +44,36 @@ if ! [ -x "$(command -v pip)" ]; then
 fi
 
 if ! [ -x "$(command -v recode)" ]; then
-  echo 'Error: python recode is not installed.' >&2
+  echo 'Error: recode is not installed.' >&2
   exit 1
 fi
 
-##Checking package version
-## Find if yt-dlp is latest version
-echo "Checking yt-dlp version."
-installed_version=$(pip3 show yt-dlp | grep -i version | cut -d ' ' -f 2)
-latest_version=$(pip3 install yt-dlp==randomstring --break-system-packages 2>&1 | grep -i "from versions:" | cut -d '(' -f 2 | cut -d ')' -f 1 | tr ',' '\n' | tail -1 | tr -d ' ')
-echo "Installed version: $installed_version"
-echo "Latest version: $latest_version"
-if [ "$installed_version" = "$latest_version" ]; then
-  echo "The package yt-dlp is up-to-date."
-else
-	echo "Updating outdated yt-dlp package"
-	pip3 install yt-dlp==${latest_version} --break-system-packages
-	echo "If upgrade went well please run the script again."
-	exit 1
+if ! [ -x "$(command -v iconv)" ]; then
+  echo 'Error: iconv is not installed.' >&2
+  exit 1
 fi
 
 
+echo "Checking yt-dlp version."
+#Checking package version
+# Find if yt-dlp is latest version
+VERSION=$(pip list --outdated 2>&1 | grep yt-dlp | sed 's/yt-dlp (//g' | sed 's/) - Latest://g' | sed 's/\[wheel\]//g')
+CURRENT=$(echo $VERSION | awk '{ print $1 }' )
+LATEST=$(echo $VERSION | awk '{ print $2 }' )
 
+if [ "${CURRENT}" != "$LATEST" ]
+then
+	# Update the youtube dl
+	#sudo yt-dlp -U
+	echo "Please input sudo password to upgrade yt-dlp."
+	pip install yt-dlp --upgrade
+	echo "If upgrade went well, we will run the run the script again."
+	sleep 5
+	${0} $@
+	exit
+else
+	echo "yt-dlp is up to date."
+fi
 
 for LINES in `cat $1`;do
 
@@ -88,13 +84,14 @@ for LINES in `cat $1`;do
 	RESULT="`wget -qO- ${LINE}`"
 
 	# Get the page title to use as filename
-	TEMP_NAME=$(echo ${RESULT} | sed -n 's/.*<title>\(.*\)<\/title>.*/\1/ip;T;q' | recode html..ascii)
-
+	TEMP_NAME=$(echo ${RESULT} | sed -n 's/.*<title>\(.*\)<\/title>.*/\1/ip;T;q' | iconv -f UTF-8 -t ASCII//TRANSLIT 2>/dev/null | recode html..ascii)
+	
 	# Replace - YouTube with nothing, its bad yo have it in the name
 	TEMP_NAME_NO_YOUTUBE=$(echo ${TEMP_NAME} | sed 's/ - YouTube//g')
 
+
 	# Replace / with - otherwise it will look for folder/filename
-	NAME=$(echo ${TEMP_NAME_NO_YOUTUBE} | sed 's/\//-/g' )
+	NAME=$(echo ${TEMP_NAME_NO_YOUTUBE} | sed 's/\//-/g')
 
 	# If name is empty use a date or something
 	if [[ -z "$NAME" ]]
@@ -107,63 +104,34 @@ for LINES in `cat $1`;do
 	echo "## Filename is: ${NAME} "
 	echo "###################################"
 
-	X=/tmp/.yt-dlp-$(date +%y.%m.%d_%H.%M.%S)-$RANDOM
+	X=/tmp/.yt-dlp-$(date +%y.%m.%d_%H.%M.%S)-$RANDOM.flv
 
-	if [[ ! -z $DEBUG ]]
-	then
-		echo "###################################"
-		echo "## Tempfile is: ${X}"
-		echo "###################################"
-	fi
+	echo "###################################"
+	echo "## Tempfile is: ${X}"
+	echo "###################################"
 
-	yt-dlp -f bestvideo+bestaudio --output=${X}.flv --format=18 "${LINE}"
+	echo /usr/local/bin/yt-dlp -f bestaudio --output=${X} "${LINE}"
 
+	/usr/local/bin/yt-dlp -f bestaudio --output=${X} "${LINE}"
 	echo "###################################"
 	echo "## Video downloaded, converting. ##"
 	echo "###################################"
 
 #	avconv -i ${X} -acodec libmp3lame -ac 2 -ab 128k -vn -y "${NAME}.mp3"
-        if [[ ! -z $DEBUG ]]
-        then
-		ffmpeg -loglevel info -i ${X}.flv -acodec libmp3lame -ac 2 -ab 128k -vn -y "${X}.mp3"
-	else
-		ffmpeg -i ${X}.flv -acodec libmp3lame -ac 2 -ab 128k -vn -y "${X}.mp3" > /dev/null  2>&1
-	fi
+	ffmpeg -i ${X} -acodec libmp3lame -ac 2 -ab 128k -vn -y "${NAME}.mp3"
 
-	mv  "${X}.mp3" "$(pwd)/${NAME}.mp3"
-	RESULT=$?
+	echo "###################################"
+	echo "Removing temporary file: ${X}"
+	echo "###################################"
 
-	if [[ ! -z $DEBUG ]]
-	then
-		echo "###################################"
-		echo "Removing temporary file: ${X}"
-		echo "###################################"
-	fi
+	rm ${X}
 
-	rm ${X}.flv
-
-	if [[ $RESULT -eq 0 ]]
-	then
-		echo "###################################"
-		echo "## Video converted succesfully! ##"
-		echo "###################################"
-	else
-		FAILED=$(echo -e "$FAILED \n ${LINE}")
-		echo "###################################"
-		echo "## Video not converted           ##"a
-		echo "###################################"
-	fi
+	echo "###################################"
+	echo "## Video converted succesfully! ##"
+	echo "###################################"
 
 done
 
-if [[ -z $FAILED ]]
-then
-	echo "###################################"
-	echo "##   All videos are converted!   ##"
-	echo "###################################"
-else
-	echo "###################################"
-	echo "## Failed to convert:            ##"
-	echo "## $FAILED"
-	echo "###################################"
-fi
+echo "###################################"
+echo "## All videos are converted! ##"
+echo "###################################"
